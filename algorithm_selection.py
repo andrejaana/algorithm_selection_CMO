@@ -5,6 +5,7 @@ from sklearn.neighbors import KNeighborsClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.dummy import DummyClassifier
 from sklearn.preprocessing import MultiLabelBinarizer
+from sklearn.multioutput import ClassifierChain
 
 import random
 
@@ -19,7 +20,9 @@ def predict_decision_tree(train_data, test_data):
     train_data_vals = train_data_vals.astype(np.float32)
     test_data_vals = test_data_vals.astype(np.float32)
 
-    clf = DecisionTreeClassifier().fit(np.array(train_data_vals), np.array(train_data["best_algorithms"].tolist()))
+    dt = DecisionTreeClassifier(random_state=42)
+    clf = ClassifierChain(base_estimator=dt, random_state=42)
+    clf.fit(np.array(train_data_vals), np.array(train_data["best_algorithms"].tolist()))
     y_pred = clf.predict(np.array(test_data_vals))
     acc_precision = AS_Precision(test_data["best_algorithms"].tolist(), y_pred.tolist())
 
@@ -36,7 +39,9 @@ def predict_random_forest(train_data, test_data):
     train_data_vals = train_data_vals.astype(np.float32)
     test_data_vals = test_data_vals.astype(np.float32)
 
-    clf = RandomForestClassifier().fit(np.array(train_data_vals), np.array(train_data["best_algorithms"].tolist()))
+    rf = RandomForestClassifier(random_state=42)
+    clf = ClassifierChain(base_estimator=rf, random_state=42)
+    clf.fit(np.array(train_data_vals), np.array(train_data["best_algorithms"].tolist()))
     y_pred = clf.predict(np.array(test_data_vals))
     acc_precision = AS_Precision(test_data["best_algorithms"].tolist(), y_pred.tolist())
 
@@ -53,7 +58,9 @@ def predict_knn(train_data, test_data):
     train_data_vals = train_data_vals.astype(np.float32)
     test_data_vals = test_data_vals.astype(np.float32)
 
-    clf = KNeighborsClassifier().fit(np.array(train_data_vals), np.array(train_data["best_algorithms"].tolist()))
+    knn = KNeighborsClassifier()
+    clf = ClassifierChain(base_estimator=knn, random_state=42)
+    clf.fit(np.array(train_data_vals), np.array(train_data["best_algorithms"].tolist()))
     y_pred = clf.predict(np.array(test_data_vals))
     acc_precision = AS_Precision(test_data["best_algorithms"].tolist(), y_pred.tolist())
 
