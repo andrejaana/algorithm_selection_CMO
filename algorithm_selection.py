@@ -76,16 +76,11 @@ def predict_dummy(train_data, test_data):
     train_data_vals = train_data[train_data.columns.difference(['problem', 'dim',"best_algorithms"])].values
     test_data_vals = test_data[test_data.columns.difference(['problem', 'dim', "best_algorithms"])].values
 
-    train_y = np.array(train_data["best_algorithms"].tolist())
-    test_y = np.array(test_data["best_algorithms"].tolist())
-    y_result = []
-    for i in range(test_y.shape[1]):
-        clf = DummyClassifier(strategy="most_frequent").fit(train_data_vals, train_y[:,i].tolist())
-        y_result.append(clf.predict(test_data_vals))
-    y_result = np.array(y_result).transpose()
-
-    acc_precision = AS_Precision(test_y, y_result)
-
+    dummy = DummyClassifier(strategy="stratified")
+    clf = ClassifierChain(base_estimator=dummy, random_state=42)
+    clf.fit(np.array(train_data_vals), np.array(train_data["best_algorithms"].tolist()))
+    y_pred = clf.predict(np.array(test_data_vals))
+    acc_precision = AS_Precision(test_data["best_algorithms"].tolist(), y_pred.tolist())
     return acc_precision
 
 # Data Preprocessing Function
@@ -142,7 +137,7 @@ def AS_Precision(true, predicted):
 # Main Leave-One-Problem-Out (LOPO) Evaluation Function
 def main_LOPO(feature_sel=False):
     random.seed(10)
-    dim = 10
+    dim = 2
     cut = '1'
 
     df = pd.read_csv("data/ELA_features.csv")
