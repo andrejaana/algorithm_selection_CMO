@@ -6,10 +6,9 @@ from statsmodels.stats.multicomp import pairwise_tukeyhsd
 
 # Function to check distribution overlap
 def check_icmop_distribution_overlap(best_alg, alg2):
-    best_95_data = np.mean(best_alg) + np.std(best_alg)
-    alg2_95_data = np.mean(alg2) - np.std(alg2)
-
-    if alg2_95_data<=best_95_data:
+    best_data = np.median(best_alg) + np.median(np.abs(best_alg - np.median(best_alg)))
+    alg2_data = np.median(alg2) - np.median(np.abs(alg2 - np.median(alg2)))
+    if alg2_data<=best_data:
         return True
     return False
 
@@ -52,7 +51,7 @@ def check_algorithms_anova(data_orig, best_algs, best_alg):
 
 # Main script
 def main():
-    dim = 5
+    dim = 10
     cuts = ['_1', '_2', '_3', '_4', '_5']
     algs = ['NSGA3', 'MOEAD', 'CTAEA', 'NSGA2', 'AGE', 'SPEA2', 'GDE3', 'NSDE', 'NSDER']
     cut = cuts[4]
