@@ -10,8 +10,8 @@ from sklearn.metrics import label_ranking_average_precision_score, hamming_loss,
 
 import random
 
-# Decision Tree Classifier Prediction
-def predict_decision_tree(train_data, test_data):
+# Predict and evaluate test data using model
+def predict_model(train_data, test_data, model):
     train_data = train_data.fillna(0)
     test_data = test_data.fillna(0)
     train_data.replace([np.inf, -np.inf, np.nan], 0, inplace=True)
@@ -21,76 +21,7 @@ def predict_decision_tree(train_data, test_data):
     train_data_vals = train_data_vals.astype(np.float32)
     test_data_vals = test_data_vals.astype(np.float32)
 
-    dt = DecisionTreeClassifier(random_state=42)
-    clf = ClassifierChain(estimator=dt, random_state=42)
-    clf.fit(np.array(train_data_vals), np.array(train_data["best_algorithms"].tolist()))
-    y_pred = clf.predict(np.array(test_data_vals))
-    acc_precision = AS_Precision(test_data["best_algorithms"].tolist(), y_pred.tolist())
-
-    lrap = label_ranking_average_precision_score(test_data["best_algorithms"].tolist(), y_pred.tolist())
-    hamm = hamming_loss(test_data["best_algorithms"].tolist(), y_pred.tolist())
-    subset_acc = accuracy_score(test_data["best_algorithms"].tolist(), y_pred.tolist())
-
-    return [acc_precision, lrap, hamm, subset_acc]
-
-# Random Forest Classifier Prediction
-def predict_random_forest(train_data, test_data):
-    train_data = train_data.fillna(0)
-    test_data = test_data.fillna(0)
-    train_data.replace([np.inf, -np.inf, np.nan], 0, inplace=True)
-    test_data.replace([np.inf, -np.inf, np.nan], 0, inplace=True)
-    train_data_vals = train_data[train_data.columns.difference(['problem', 'dim',"best_algorithms"])].values
-    test_data_vals = test_data[test_data.columns.difference(['problem', 'dim',"best_algorithms"])].values
-    train_data_vals = train_data_vals.astype(np.float32)
-    test_data_vals = test_data_vals.astype(np.float32)
-
-    rf = RandomForestClassifier(random_state=42)
-    clf = ClassifierChain(estimator=rf, random_state=42)
-    clf.fit(np.array(train_data_vals), np.array(train_data["best_algorithms"].tolist()))
-    y_pred = clf.predict(np.array(test_data_vals))
-    acc_precision = AS_Precision(test_data["best_algorithms"].tolist(), y_pred.tolist())
-
-    lrap = label_ranking_average_precision_score(test_data["best_algorithms"].tolist(), y_pred.tolist())
-    hamm = hamming_loss(test_data["best_algorithms"].tolist(), y_pred.tolist())
-    subset_acc = accuracy_score(test_data["best_algorithms"].tolist(), y_pred.tolist())
-
-    return [acc_precision, lrap, hamm, subset_acc]
-
-# k-Nearest Neighbors Classifier Prediction
-def predict_knn(train_data, test_data):
-    train_data = train_data.fillna(0)
-    test_data = test_data.fillna(0)
-    train_data.replace([np.inf, -np.inf, np.nan], 0, inplace=True)
-    test_data.replace([np.inf, -np.inf, np.nan], 0, inplace=True)
-    train_data_vals = train_data[train_data.columns.difference(['problem', 'dim',"best_algorithms"])].values
-    test_data_vals = test_data[test_data.columns.difference(['problem', 'dim',"best_algorithms"])].values
-    train_data_vals = train_data_vals.astype(np.float32)
-    test_data_vals = test_data_vals.astype(np.float32)
-
-    knn = KNeighborsClassifier()
-    clf = ClassifierChain(estimator=knn, random_state=42)
-    clf.fit(np.array(train_data_vals), np.array(train_data["best_algorithms"].tolist()))
-    y_pred = clf.predict(np.array(test_data_vals))
-    acc_precision = AS_Precision(test_data["best_algorithms"].tolist(), y_pred.tolist())
-
-    lrap = label_ranking_average_precision_score(test_data["best_algorithms"].tolist(), y_pred.tolist())
-    hamm = hamming_loss(test_data["best_algorithms"].tolist(), y_pred.tolist())
-    subset_acc = accuracy_score(test_data["best_algorithms"].tolist(), y_pred.tolist())
-
-    return [acc_precision, lrap, hamm, subset_acc]
-
-# Dummy Classifier Prediction
-# Uses most frequent strategy for baseline comparison
-def predict_dummy(train_data, test_data):
-    train_data = train_data.fillna(0)
-    test_data = test_data.fillna(0)
-    train_data.replace([np.inf, -np.inf, np.nan], -1, inplace=True)
-    test_data.replace([np.inf, -np.inf, np.nan], -1, inplace=True)
-    train_data_vals = train_data[train_data.columns.difference(['problem', 'dim',"best_algorithms"])].values
-    test_data_vals = test_data[test_data.columns.difference(['problem', 'dim', "best_algorithms"])].values
-
-    dummy = DummyClassifier(strategy="stratified")
-    clf = ClassifierChain(estimator=dummy, random_state=42)
+    clf = ClassifierChain(estimator=model, random_state=42)
     clf.fit(np.array(train_data_vals), np.array(train_data["best_algorithms"].tolist()))
     y_pred = clf.predict(np.array(test_data_vals))
     acc_precision = AS_Precision(test_data["best_algorithms"].tolist(), y_pred.tolist())
@@ -158,7 +89,7 @@ def AS_Precision(true, predicted):
 def main_LOPO(feature_sel=False):
     random.seed(10)
     dim = 2
-    cut = '2'
+    cut = '1'
 
     df = pd.read_csv("data/ELA_features.csv")
     df = df[df['dim']==dim]
@@ -187,10 +118,14 @@ def main_LOPO(feature_sel=False):
         problem_count += 1
         test_data = df[df['problem']==problem]
         train_data = df[(df['problem']!=problem)]
-        acc_dummy = predict_dummy(train_data, test_data)
-        acc_dt = predict_decision_tree(train_data, test_data)
-        acc_rf = predict_random_forest(train_data, test_data)
-        acc_knn = predict_knn(train_data, test_data)
+        dummy = DummyClassifier(strategy="stratified")  # Uses most frequent strategy for baseline comparison
+        acc_dummy = predict_model(train_data, test_data, dummy)
+        dt = DecisionTreeClassifier(random_state=42)
+        acc_dt = predict_model(train_data, test_data, dt)
+        rf = RandomForestClassifier(random_state=42)
+        acc_rf = predict_model(train_data, test_data, rf)
+        knn = KNeighborsClassifier()
+        acc_knn = predict_model(train_data, test_data, knn)
         accs_dummy.append(acc_dummy)
         accs_dt.append(acc_dt)
         accs_rf.append(acc_rf)
